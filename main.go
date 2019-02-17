@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/hirokisan/search-fetcher/model/list"
 )
@@ -19,9 +20,23 @@ const (
 	Num     = 10
 )
 
+var (
+	app     = kingpin.New("search-fetcher", "A command-line search fetch application.")
+	post    = kingpin.Command("run", "search and store data on file")
+	opener  = post.Flag("opener", "opener to divide people to segment").Short('o').Required().String()
+	keyword = post.Flag("keyword", "meta keyword represent complain, suggestion, problem, ...").Short('k').Required().String()
+)
+
 func main() {
-	q1 := "主婦"
-	q2 := "不満"
+	switch kingpin.Parse() {
+	case "run":
+		Run()
+	}
+}
+
+func Run() error {
+	q1 := *opener
+	q2 := *keyword
 	now := time.Now().Format("2006-01-02-15-04")
 	query := url.Values{}
 	query.Add("num", strconv.Itoa(Num))
@@ -29,14 +44,14 @@ func main() {
 	query.Add("q", q2)
 	dirName := "./data/" + q1 + "_" + q2 + "_" + now + "/"
 	if err := os.MkdirAll(dirName, 0777); err != nil {
-		panic(err)
+		return err
 	}
 
 	tUrl := BaseUrl + query.Encode()
 
 	doc, err := goquery.NewDocument(tUrl)
 	if err != nil {
-		fmt.Print("url scarapping failed")
+		return err
 	}
 
 	lists := make(list.Lists, Num, Num)
@@ -72,7 +87,7 @@ func main() {
 		fmt.Println(l.Title)
 		file, err := os.Create(dirName + l.Title + ".txt")
 		if err != nil {
-			panic(err)
+			return err
 		}
 		io.WriteString(file, l.Url+"\n")
 		dc, err := goquery.NewDocument(l.Url)
@@ -102,4 +117,5 @@ func main() {
 			io.WriteString(file, text+"\n")
 		})
 	}
+	return nil
 }
