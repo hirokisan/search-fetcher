@@ -17,12 +17,13 @@ import (
 
 const (
 	BaseUrl = "https://www.google.com/search?"
-	Num     = 10
+	Num     = "10"
 )
 
 var (
 	app     = kingpin.New("search-fetcher", "A command-line search fetch application.")
 	post    = kingpin.Command("run", "search and store data on file")
+	count   = post.Flag("count", "count of files to create").Short('c').Default(Num).Int()
 	opener  = post.Flag("opener", "opener to divide people to segment").Short('o').Required().String()
 	keyword = post.Flag("keyword", "meta keyword represent complain, suggestion, problem, ...").Short('k').Required().String()
 )
@@ -37,9 +38,10 @@ func main() {
 func Run() error {
 	q1 := *opener
 	q2 := *keyword
+	num := *count
 	now := time.Now().Format("2006-01-02-15-04")
 	query := url.Values{}
-	query.Add("num", strconv.Itoa(Num))
+	query.Add("num", strconv.Itoa(num))
 	query.Add("q", q1)
 	query.Add("q", q2)
 	dirName := "./data/" + q1 + "_" + q2 + "_" + now + "/"
@@ -54,7 +56,7 @@ func Run() error {
 		return err
 	}
 
-	lists := make(list.Lists, Num, Num)
+	lists := make(list.Lists, num, num)
 	doc.Find("h3").Each(func(i int, s *goquery.Selection) {
 		lists[i].Title = s.Text()
 	})
